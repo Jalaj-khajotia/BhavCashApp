@@ -2,6 +2,7 @@ console.log('Application loaded');
 
 var XLSX = require('xlsx');
 var fileName = '30.csv';
+var minPrice = 10;
 console.log('File used is ' + fileName);
 var workbook = XLSX.readFile(fileName);
 var sheet_name_list = workbook.SheetNames;
@@ -70,7 +71,6 @@ sheet_name_list.forEach(function (y) {
         default:
             console.log('kaboom');
         }
-
     });
 
     function DailyLoosers() {
@@ -81,29 +81,29 @@ sheet_name_list.forEach(function (y) {
 
                     mydata[cell.SYMBOL] = Math.round(fall * 100) / 100;
                     limit = upper == 0 ? 100 : upper;
-                    if (mydata[cell.SYMBOL] <= -lower && mydata[cell.SYMBOL] > -upper && cell.TOTTRDQTY > 10000) {
+                    if (mydata[cell.SYMBOL] <= -lower && mydata[cell.SYMBOL] > -upper && cell.TOTTRDQTY > 10000 && cell.OPEN >= minPrice) {
                         // winners[cell.SYMBOL] = mydata[cell.SYMBOL];
 
                         winners[i++] = {
                             Symbol: cell.SYMBOL,
-                            Percentage: mydata[cell.SYMBOL]
+                            Percentage: mydata[cell.SYMBOL],
+                            CMP: cell.CLOSE
                         }
                     };
                 });
                 winners.sort(function (a, b) {
                     return b.Percentage - a.Percentage;
                 });
-
                 console.log('');
                 console.log('Total no of stocks found are ' + winners.length);
                 console.log('');
                 console.log('Listing stocks which rose > ' + lower + '% but are lower than  < ' + upper + '%');
                 console.log('');
-                console.log('  ' + 'Stock Name' + '\t' + 'Decrease');
+
+                console.log('  ' + 'Stock Name' + '\t ' + '% Decrease' + '   CMP');
                 winners.forEach(function (stock) {
-                    console.log('  ' + stock.Symbol + '\t' + stock.Percentage);
-                })
-                // console.log(winners);
+                    console.log('  ' + stock.Symbol + '\t ' + stock.Percentage + '\t     ' + stock.CMP);
+                })                
                 readline.close()
             });
         });
@@ -117,17 +117,17 @@ sheet_name_list.forEach(function (y) {
                 excel.forEach(function (cell) {
                     var gapupPercentage = (cell.OPEN - cell.PREVCLOSE) * 100 / cell.PREVCLOSE;
                     var riseFall = (cell.CLOSE - cell.PREVCLOSE) * 100 / cell.PREVCLOSE;
-                    if (gapupPercentage < 0 && gapupPercentage > gapDown && riseFall >= loss && cell.TOTTRDQTY > 10000) {
+                    if (gapupPercentage < 0 && gapupPercentage > gapDown && riseFall >= loss && cell.TOTTRDQTY > 10000 && cell.OPEN >= minPrice) {
 
                         var percentage = Math.round(riseFall * 100) / 100;
                         var valuegapup = Math.round(gapupPercentage * 100) / 100;
                         gapUpList[i++] = {
                             Symbol: cell.SYMBOL,
                             Percentage: percentage,
-                            gapDown: valuegapup
+                            gapDown: valuegapup,
+                            CMP: cell.CLOSE
                         };
                     }
-
                 });
                 console.log('');
                 console.log('Total no of stocks found are ' + gapUpList.length);
@@ -135,7 +135,6 @@ sheet_name_list.forEach(function (y) {
                 console.log('Listing stocks with gap up > ' + gapDown + '% & gained > ' + loss + '%');
                 console.log('');
                 console.log('  ' + 'Stock Name' + '\t' + 'Gap Down %' + '\t' + 'Increase');
-
                 gapUpList.forEach(function (stock) {
                     console.log('  ' + stock.Symbol + '\t' + stock.gapDown + '\t' + stock.Percentage);
                 })
@@ -152,17 +151,17 @@ sheet_name_list.forEach(function (y) {
                 excel.forEach(function (cell) {
                     var gapupPercentage = (cell.OPEN - cell.PREVCLOSE) * 100 / cell.PREVCLOSE;
                     var riseFall = (cell.CLOSE - cell.PREVCLOSE) * 100 / cell.PREVCLOSE;
-                    if (gapupPercentage > 0 && gapupPercentage > gapUp && riseFall >= gain && cell.TOTTRDQTY > 10000) {
+                    if (gapupPercentage > 0 && gapupPercentage > gapUp && riseFall >= gain && cell.TOTTRDQTY > 10000 && cell.OPEN >= minPrice) {
 
                         var percentage = Math.round(riseFall * 100) / 100;
                         var valuegapup = Math.round(gapupPercentage * 100) / 100;
                         gapUpList[i++] = {
                             Symbol: cell.SYMBOL,
                             Percentage: percentage,
-                            GapUp: valuegapup
+                            GapUp: valuegapup,
+                            CMP: cell.CLOSE
                         };
                     }
-
                 });
                 console.log('');
                 console.log('Total no of stocks found are ' + gapUpList.length);
@@ -170,7 +169,6 @@ sheet_name_list.forEach(function (y) {
                 console.log('Listing stocks with gap up > ' + gapUp + '% & gained > ' + gain + '%');
                 console.log('');
                 console.log('  ' + 'Stock Name' + '\t' + 'GapUp %' + '\t' + 'Increase');
-
                 gapUpList.forEach(function (stock) {
                     console.log('  ' + stock.Symbol + '\t' + stock.GapUp + '\t' + stock.Percentage);
                 })
@@ -184,17 +182,13 @@ sheet_name_list.forEach(function (y) {
             readline.question('Enter Upper Limit, Default:100% ', (upper) => {
                 excel.forEach(function (cell) {
                     var riseFall = (cell.CLOSE - cell.PREVCLOSE) * 100 / cell.PREVCLOSE;
-                    var gapUp = (cell.OPEN - cell.PREVCLOSE) * 100 / cell.PREVCLOSE;
-                    var roundGapUp = Math.round(gapUp * 100) / 100;
-
                     mydata[cell.SYMBOL] = Math.round(riseFall * 100) / 100;
                     limit = upper == 0 ? 100 : upper;
-                    if (mydata[cell.SYMBOL] >= lower && mydata[cell.SYMBOL] < upper && cell.TOTTRDQTY > 10000) {
-                        // winners[cell.SYMBOL] = mydata[cell.SYMBOL];
-
+                    if (mydata[cell.SYMBOL] >= lower && mydata[cell.SYMBOL] < upper && cell.TOTTRDQTY > 10000 && cell.OPEN >= minPrice) {
                         winners[i++] = {
                             Symbol: cell.SYMBOL,
-                            Percentage: mydata[cell.SYMBOL]
+                            Percentage: mydata[cell.SYMBOL],
+                            CMP: cell.CLOSE
                         }
                     };
                 });
@@ -207,11 +201,12 @@ sheet_name_list.forEach(function (y) {
                 console.log('');
                 console.log('Listing stocks which rose > ' + lower + '% but are lower than  < ' + upper + '%');
                 console.log('');
-                console.log('  ' + 'Stock Name' + '\t' + 'Increase');
+
+                console.log('  ' + 'Stock Name' + '\t ' + '% Increase' + '   CMP');
                 winners.forEach(function (stock) {
-                    console.log('  ' + stock.Symbol + '\t' + stock.Percentage);
+                    console.log('  ' + stock.Symbol + '\t ' + stock.Percentage + '\t     ' + stock.CMP);
                 })
-                // console.log(winners);
+
                 readline.close()
             });
         });
