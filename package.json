@@ -2,6 +2,6 @@
   "name": "proj",
   "version": "",
   "dependencies": {
-    "xlsx": "^0.15.6"
+    "xlsx": "^0.17.0"
   }
 }
